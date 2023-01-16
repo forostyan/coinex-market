@@ -10,7 +10,7 @@ async def on_startup(_):
 
 @injector.inject
 def run(tg_dispatcher: Dispatcher):
-    client.register_handlers_client(tg_dispatcher)
+    client.register_handlers_client()
     executor.start_polling(tg_dispatcher, skip_updates=True, on_startup=on_startup)
 
 

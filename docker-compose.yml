@@ -7,15 +7,24 @@ x-common:
 
 services:
   coinex:
+    <<: *common
+    build: .
     volumes:
-      -
+      - ./telegram_bot:/code/telegram_bot
+      - ./:/code
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   postgres:
     <<: *common
     image: postgres:13
     container_name: postgres
     ports:
       - "5434:5432"
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD", "pg_isready", "-U", "coinex" ]
+      test: [ "CMD", "pg_isready", "-U", "${POSTGRES_USER}" ]
       interval: 5s
       retries: 5

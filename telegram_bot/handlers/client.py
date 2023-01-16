@@ -157,7 +157,7 @@ async def process_callback_withdraw_btn(callback: types.CallbackQuery):
 # вывод сумма
 @dp.callback_query_handler(state=FSMWithdraw.coin)
 async def process_callback_withdraw_coin_btn(
-    callback: types.CallbackQuery, state: FSMContext
+        callback: types.CallbackQuery, state: FSMContext
 ):
     async with state.proxy() as withdraw_data:
         withdraw_data["coin"] = callback.data
@@ -180,7 +180,7 @@ async def process_callback_withdraw_sum_btn(message: types.Message, state: FSMCo
 # вывод конец
 @dp.message_handler(state=FSMWithdraw.address)
 async def process_callback_withdraw_address_btn(
-    message: types.Message, state: FSMContext, db_connection
+        message: types.Message, state: FSMContext, db_connection
 ):
     async with state.proxy() as withdraw_data:
         withdraw_data["address"] = message.text
@@ -234,7 +234,7 @@ async def process_callback_create_deal_btn(callback: types.CallbackQuery):
 # создание Выбрать криптовалюту
 @dp.callback_query_handler(state=FSMCreate.side)
 async def process_callback_create_buy_btn(
-    callback: types.CallbackQuery, state: FSMContext
+        callback: types.CallbackQuery, state: FSMContext
 ):
     async with state.proxy() as data:
         data["side"] = callback.data
@@ -249,7 +249,7 @@ async def process_callback_create_buy_btn(
 # создание Выбрать фиат
 @dp.callback_query_handler(state=FSMCreate.coin)
 async def process_callback_create_coin_btn(
-    callback: types.CallbackQuery, state: FSMContext
+        callback: types.CallbackQuery, state: FSMContext
 ):
     async with state.proxy() as data:
         data["coin"] = callback.data
@@ -264,7 +264,7 @@ async def process_callback_create_coin_btn(
 # создание Ввести адрес
 @dp.callback_query_handler(state=FSMCreate.fiat)
 async def process_callback_create_fiat_btn(
-    callback: types.CallbackQuery, state: FSMContext
+        callback: types.CallbackQuery, state: FSMContext
 ):
     async with state.proxy() as data:
         data["fiat"] = callback.data
@@ -279,7 +279,7 @@ async def process_callback_create_fiat_btn(
 # создание ввести минимум валюты
 @dp.message_handler(state=FSMCreate.address)
 async def process_callback_create_address_btn(
-    message: types.Message, state: FSMContext
+        message: types.Message, state: FSMContext
 ):
     async with state.proxy() as data:
         data["address"] = message.text
@@ -313,7 +313,7 @@ async def process_callback_create_max_btn(message: types.Message, state: FSMCont
 # создание конец
 @dp.message_handler(state=FSMCreate.rate)
 async def process_callback_create_rate_btn(
-    message: types.Message, state: FSMContext, db_connection
+        message: types.Message, state: FSMContext, db_connection
 ):
     async with state.proxy() as data:
         data["rate"] = message.text
@@ -370,7 +370,7 @@ async def process_callback_take_btn(callback: types.CallbackQuery):
 # выбрать выбор монеты
 @dp.callback_query_handler(state=FSMChoose.side)
 async def process_callback_take_buy_btn(
-    callback: types.CallbackQuery, state: FSMContext
+        callback: types.CallbackQuery, state: FSMContext
 ):
     async with state.proxy() as data:
         data["side"] = callback.data
@@ -385,7 +385,7 @@ async def process_callback_take_buy_btn(
 # выбрать конец
 @dp.callback_query_handler(state=FSMChoose.coin)
 async def process_callback_take_coin_btn(
-    callback: types.CallbackQuery, state: FSMContext, db_connection
+        callback: types.CallbackQuery, state: FSMContext, db_connection
 ):
     async with state.proxy() as data:
         data["coin"] = callback.data
@@ -457,26 +457,27 @@ async def process_callback_my_closed_btn(callback: types.CallbackQuery):
     await callback.answer()
 
 
-def register_handlers_client(dp: Dispatcher):
-    dp.register_message_handler(process_start_command, commands=["start"])
-    dp.register_callback_query_handler(process_start_command)
-    dp.register_callback_query_handler(process_callback_back_btn)
-    dp.register_callback_query_handler(process_callback_wallet_btn)
-    dp.register_callback_query_handler(process_callback_create_deal_btn)
-    dp.register_callback_query_handler(process_callback_my_deals_btn)
-    dp.register_callback_query_handler(process_callback_my_active_btn)
-    dp.register_callback_query_handler(process_callback_my_closed_btn)
-    dp.register_callback_query_handler(process_callback_deposit_btn)
-    dp.register_callback_query_handler(process_callback_withdraw_btn)
-    dp.register_callback_query_handler(process_callback_withdraw_coin_btn)
-    dp.register_callback_query_handler(process_callback_withdraw_sum_btn)
-    dp.register_callback_query_handler(process_callback_withdraw_address_btn)
-    dp.register_callback_query_handler(process_callback_create_buy_btn)
-    dp.register_callback_query_handler(process_callback_create_coin_btn)
-    dp.register_callback_query_handler(process_callback_create_fiat_btn)
-    dp.register_callback_query_handler(process_callback_create_address_btn)
-    dp.register_callback_query_handler(process_callback_create_min_btn)
-    dp.register_callback_query_handler(process_callback_create_max_btn)
-    dp.register_callback_query_handler(process_callback_create_rate_btn)
-    dp.register_callback_query_handler(process_callback_take_buy_btn)
-    dp.register_callback_query_handler(process_callback_take_coin_btn)
+@injector.inject
+def register_handlers_client(tg_dispatcher: Dispatcher):
+    tg_dispatcher.register_message_handler(process_start_command, commands=["start"])
+    tg_dispatcher.register_callback_query_handler(process_start_command)
+    tg_dispatcher.register_callback_query_handler(process_callback_back_btn)
+    tg_dispatcher.register_callback_query_handler(process_callback_wallet_btn)
+    tg_dispatcher.register_callback_query_handler(process_callback_create_deal_btn)
+    tg_dispatcher.register_callback_query_handler(process_callback_my_deals_btn)
+    tg_dispatcher.register_callback_query_handler(process_callback_my_active_btn)
+    tg_dispatcher.register_callback_query_handler(process_callback_my_closed_btn)
+    tg_dispatcher.register_callback_query_handler(process_callback_deposit_btn)
+    tg_dispatcher.register_callback_query_handler(process_callback_withdraw_btn)
+    tg_dispatcher.register_callback_query_handler(process_callback_withdraw_coin_btn)
+    tg_dispatcher.register_callback_query_handler(process_callback_withdraw_sum_btn)
+    tg_dispatcher.register_callback_query_handler(process_callback_withdraw_address_btn)
+    tg_dispatcher.register_callback_query_handler(process_callback_create_buy_btn)
+    tg_dispatcher.register_callback_query_handler(process_callback_create_coin_btn)
+    tg_dispatcher.register_callback_query_handler(process_callback_create_fiat_btn)
+    tg_dispatcher.register_callback_query_handler(process_callback_create_address_btn)
+    tg_dispatcher.register_callback_query_handler(process_callback_create_min_btn)
+    tg_dispatcher.register_callback_query_handler(process_callback_create_max_btn)
+    tg_dispatcher.register_callback_query_handler(process_callback_create_rate_btn)
+    tg_dispatcher.register_callback_query_handler(process_callback_take_buy_btn)
+    tg_dispatcher.register_callback_query_handler(process_callback_take_coin_btn)
