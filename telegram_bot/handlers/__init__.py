@@ -1,3 +1,5 @@
-from handlers import client
-from handlers import other
-from handlers import admin
+from telegram_bot.handlers import client
+from telegram_bot.handlers import other
+from telegram_bot.handlers import admin
+
+__all__ = ("client", "other", "admin")
