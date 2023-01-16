@@ -1,0 +1,21 @@
+version: '3.9'
+
+x-common:
+  &common
+  env_file:
+    - .env
+
+services:
+  coinex:
+    volumes:
+      -
+  postgres:
+    <<: *common
+    image: postgres:13
+    container_name: postgres
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "coinex" ]
+      interval: 5s
+      retries: 5

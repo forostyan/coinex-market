@@ -2,10 +2,11 @@ from datetime import datetime
 from aiogram import types, Dispatcher
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
-import psycopg2
 
-from telegram_bot.create_bot import dp
 from telegram_bot.keyboards import client_kb
+from telegram_bot.utils.injector import injector
+
+dp = injector.get("tg_dispatcher")
 
 
 # ввод состояния
@@ -38,13 +39,11 @@ class FSMChoose(StatesGroup):
     coin = State()
 
 
-connection = psycopg2.connect(host=host, user=user, password=password, database=db_name)
-
-
 # стартовый экран
 @dp.message_handler(commands=["start"])
-async def process_start_command(message: types.Message):
-    with connection.cursor() as cursor:
+@injector.inject
+async def process_start_command(message: types.Message, db_connection):
+    with db_connection.cursor() as cursor:
         cursor.execute(
             f"""SELECT id
             FROM public."user"
@@ -58,7 +57,7 @@ async def process_start_command(message: types.Message):
                 VALUES('{message.from_user.id}', '{message.from_user.username}');"""
             )
             await message.answer("Ваш личный кабинет был успешно создан")
-    connection.commit()
+    db_connection.commit()
     await message.answer(
         "Привет!\nЭто бот CoinMarketEx. Пока в разработке, так что часть функционала недоступна.\n"
         + "Сейчас недоступны:\n Взаимодействие с чужими сделками(обмен 2 пользователей). Хорошего нового года!",
@@ -82,8 +81,8 @@ async def process_callback_back_btn(callback: types.CallbackQuery, state: FSMCon
 
 # кошелек
 @dp.callback_query_handler(text="wallet btn")
-async def process_callback_wallet_btn(callback: types.CallbackQuery):
-    with connection.cursor() as cursor:
+async def process_callback_wallet_btn(callback: types.CallbackQuery, db_connection):
+    with db_connection.cursor() as cursor:
         cursor.execute(
             f"""
                     SELECT btc, eth, bnb, usdt, usdc, busd
@@ -118,14 +117,14 @@ async def process_callback_deposit_btn(callback: types.CallbackQuery):
 
 # ввод конец
 @dp.callback_query_handler(state=FSMDeposit.coin)
-async def process_callback_deposit_btn(callback: types.CallbackQuery):
+async def process_callback_deposit_btn(callback: types.CallbackQuery, db_connection):
     await callback.message.answer(
         "Вот кошелек для перевода суммы: [кошельки пока не созданы]\n"
         + f"{callback.data}\n"
         + "Сумма переведенная на этот кошелек будет зачисленна на кошелек пользователя (по дефолту пополняет на 10)",
         reply_markup=client_kb.back_kb,
     )
-    with connection.cursor() as cursor:
+    with db_connection.cursor() as cursor:
         cursor.execute(
             f"""
                     SELECT {callback.data}
@@ -141,7 +140,7 @@ async def process_callback_deposit_btn(callback: types.CallbackQuery):
         WHERE
         id = '{callback.from_user.id}';"""
         )
-        connection.commit()
+        db_connection.commit()
     await callback.message.delete()
     await callback.answer()
 
@@ -158,7 +157,7 @@ async def process_callback_withdraw_btn(callback: types.CallbackQuery):
 # вывод сумма
 @dp.callback_query_handler(state=FSMWithdraw.coin)
 async def process_callback_withdraw_coin_btn(
-        callback: types.CallbackQuery, state: FSMContext
+    callback: types.CallbackQuery, state: FSMContext
 ):
     async with state.proxy() as withdraw_data:
         withdraw_data["coin"] = callback.data
@@ -181,11 +180,11 @@ async def process_callback_withdraw_sum_btn(message: types.Message, state: FSMCo
 # вывод конец
 @dp.message_handler(state=FSMWithdraw.address)
 async def process_callback_withdraw_address_btn(
-        message: types.Message, state: FSMContext
+    message: types.Message, state: FSMContext, db_connection
 ):
     async with state.proxy() as withdraw_data:
         withdraw_data["address"] = message.text
-    with connection.cursor() as cursor:
+    with db_connection.cursor() as cursor:
         cursor.execute(
             f"""
                        SELECT {withdraw_data['coin']}
@@ -206,7 +205,7 @@ async def process_callback_withdraw_address_btn(
                WHERE
                id = '{message.from_user.id}';"""
             )
-            connection.commit()
+            db_connection.commit()
             cursor.execute(
                 f"""INSERT INTO public.withdraw
                             (id, userid, address, "time", coin, amount)
@@ -217,7 +216,7 @@ async def process_callback_withdraw_address_btn(
                 reply_markup=client_kb.back_kb,
             )
 
-            connection.commit()
+            db_connection.commit()
     await message.delete()
 
 
@@ -235,7 +234,7 @@ async def process_callback_create_deal_btn(callback: types.CallbackQuery):
 # создание Выбрать криптовалюту
 @dp.callback_query_handler(state=FSMCreate.side)
 async def process_callback_create_buy_btn(
-        callback: types.CallbackQuery, state: FSMContext
+    callback: types.CallbackQuery, state: FSMContext
 ):
     async with state.proxy() as data:
         data["side"] = callback.data
@@ -250,7 +249,7 @@ async def process_callback_create_buy_btn(
 # создание Выбрать фиат
 @dp.callback_query_handler(state=FSMCreate.coin)
 async def process_callback_create_coin_btn(
-        callback: types.CallbackQuery, state: FSMContext
+    callback: types.CallbackQuery, state: FSMContext
 ):
     async with state.proxy() as data:
         data["coin"] = callback.data
@@ -265,7 +264,7 @@ async def process_callback_create_coin_btn(
 # создание Ввести адрес
 @dp.callback_query_handler(state=FSMCreate.fiat)
 async def process_callback_create_fiat_btn(
-        callback: types.CallbackQuery, state: FSMContext
+    callback: types.CallbackQuery, state: FSMContext
 ):
     async with state.proxy() as data:
         data["fiat"] = callback.data
@@ -280,7 +279,7 @@ async def process_callback_create_fiat_btn(
 # создание ввести минимум валюты
 @dp.message_handler(state=FSMCreate.address)
 async def process_callback_create_address_btn(
-        message: types.Message, state: FSMContext
+    message: types.Message, state: FSMContext
 ):
     async with state.proxy() as data:
         data["address"] = message.text
@@ -313,10 +312,12 @@ async def process_callback_create_max_btn(message: types.Message, state: FSMCont
 
 # создание конец
 @dp.message_handler(state=FSMCreate.rate)
-async def process_callback_create_rate_btn(message: types.Message, state: FSMContext):
+async def process_callback_create_rate_btn(
+    message: types.Message, state: FSMContext, db_connection
+):
     async with state.proxy() as data:
         data["rate"] = message.text
-    with connection.cursor() as cursor:
+    with db_connection.cursor() as cursor:
         cursor.execute(
             f"""
                        SELECT {data['coin']}
@@ -343,7 +344,7 @@ async def process_callback_create_rate_btn(message: types.Message, state: FSMCon
                             VALUES('{hash(datetime.now())}', '{datetime.now()}', '{seller}', '{seller_name}', '{buyer}', '{buyer_name}', '{data['coin']}', {data['rate']}, {data['min']}, {data['max']}, '{data['fiat']}', 'created');
                             """
             )
-            connection.commit()
+            db_connection.commit()
 
     async with state.proxy() as data:
         await message.answer(
@@ -369,7 +370,7 @@ async def process_callback_take_btn(callback: types.CallbackQuery):
 # выбрать выбор монеты
 @dp.callback_query_handler(state=FSMChoose.side)
 async def process_callback_take_buy_btn(
-        callback: types.CallbackQuery, state: FSMContext
+    callback: types.CallbackQuery, state: FSMContext
 ):
     async with state.proxy() as data:
         data["side"] = callback.data
@@ -384,7 +385,7 @@ async def process_callback_take_buy_btn(
 # выбрать конец
 @dp.callback_query_handler(state=FSMChoose.coin)
 async def process_callback_take_coin_btn(
-        callback: types.CallbackQuery, state: FSMContext
+    callback: types.CallbackQuery, state: FSMContext, db_connection
 ):
     async with state.proxy() as data:
         data["coin"] = callback.data
@@ -393,7 +394,7 @@ async def process_callback_take_coin_btn(
         partner = "seller"
     else:
         partner = "buyer"
-    with connection.cursor() as cursor:
+    with db_connection.cursor() as cursor:
         cursor.execute(
             f"""
                                SELECT seller_name||'; '||buyer_name||'; '||coin||'; '||rate||'; '||min||'; '||max||'; '||fiat
@@ -424,8 +425,8 @@ async def process_callback_my_deals_btn(callback: types.CallbackQuery):
 
 # активные сделки
 @dp.callback_query_handler(text="my active btn")
-async def process_callback_my_active_btn(callback: types.CallbackQuery):
-    with connection.cursor() as cursor:
+async def process_callback_my_active_btn(callback: types.CallbackQuery, db_connection):
+    with db_connection.cursor() as cursor:
         cursor.execute(
             f"""
                        SELECT seller_name||'; '||buyer_name||'; '||coin||'; '||rate||'; '||min||'; '||max||'; '||fiat

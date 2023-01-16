@@ -1,2 +1,4 @@
 aiogram==2.24
 psycopg2
+dynaconf
+giveme

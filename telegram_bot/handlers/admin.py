@@ -1,7 +1,9 @@
-from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram import types
-from telegram_bot.create_bot import dp
+
+from telegram_bot.utils.injector import injector
+
+dp = injector.get("tg_dispatcher")
 
 
 class FSMAdmin(StatesGroup):
