@@ -1,0 +1,19 @@
+version: '3.9'
+
+x-common:
+  &common
+  env_file:
+    - .env
+
+services:
+  coinex:
+    <<: *common
+    build: .
+    volumes:
+      - ./telegram_bot:/code/telegram_bot
+      - ./:/code
+    networks:
+      - coinex
+
+networks:
+  coinex:
