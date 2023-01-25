@@ -1,0 +1,36 @@
+version: '3.9'
+
+x-common:
+  &common
+  env_file:
+    - .env
+
+services:
+  coinex:
+    <<: *common
+    build: .
+    volumes:
+      - ./telegram_bot:/code/telegram_bot
+      - ./:/code
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - coinex
+
+  postgres:
+    <<: *common
+    image: postgres:13
+    container_name: postgres
+    volumes:
+      - ./db.sql:/docker-entrypoint-initdb.d/db.sql
+      - ./data/db:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}" ]
+      interval: 5s
+      retries: 5
+    networks:
+      - coinex
+
+networks:
+  coinex:

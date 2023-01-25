@@ -1,0 +1,4 @@
+aiogram==2.24
+psycopg2-binary
+dynaconf
+giveme
