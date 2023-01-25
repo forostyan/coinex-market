@@ -16,7 +16,6 @@ def db_settings():
 @injector.inject
 def db_connection(db_settings):
     import psycopg2
-
     return psycopg2.connect(
         host=db_settings.host,
         user=db_settings.user,
